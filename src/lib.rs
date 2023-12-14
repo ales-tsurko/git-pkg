@@ -2,5 +2,5 @@
 
 /// Parsing manifest file.
 pub mod manifest;
-/// Parsing manifest CLI.
+/// Parsing command line arguments.
 pub mod cli;
