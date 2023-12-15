@@ -15,6 +15,7 @@ log = "0.4.20"
 serde = { version = "1.0.193", features = ["derive"] }
 thiserror = "1.0.50"
 toml = { version = "0.8.8", features = ["display", "parse"] }
+url = { version = "2.5.0", features = ["serde"] }
 wax = "0.6.0"
 
 [lints.clippy]

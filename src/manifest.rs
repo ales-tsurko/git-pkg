@@ -1,27 +1,19 @@
-use std::fs::File;
-use std::io::Read;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use url::Url;
 
 /// The manifest (`gpkg.toml`) file.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Manifest {
-    #[serde(skip)]
-    path: PathBuf,
     dependencies: Vec<Dependency>,
 }
 
 impl Manifest {
     /// Parse the manifest file and initialize a `Manifest` struct.
-    pub fn parse(path: &str) -> Result<Self, Error> {
-        let mut manifest = File::open(path)?;
-        let mut buf = String::new();
-        manifest.read_to_string(&mut buf)?;
-
-        let mut manifest: Self = toml::from_str(&buf).map_err(|e| Error::Parse(e.to_string()))?;
-        manifest.path = PathBuf::from(path);
+    pub fn parse(contents: &str) -> Result<Self, Error> {
+        let manifest: Self = toml::from_str(&contents).map_err(|e| Error::Parse(e.to_string()))?;
 
         for dep in manifest.dependencies.iter() {
             Self::validate_dependency(&dep)?;
@@ -37,17 +29,32 @@ impl Manifest {
         }
         Ok(())
     }
+
+    /// Add a dependency to the manifest.
+    pub fn add_dependency(&mut self, dep: Dependency) -> Result<(), Error> {
+        Self::validate_dependency(&dep)?;
+        // TODO the dependency should not be added if it already exists
+        self.dependencies.push(dep);
+        Ok(())
+    }
 }
 
 /// The `gpkg.toml` dependency entry.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Dependency {
-    name: String,
-    branch: Option<String>,
-    tag: Option<String>,
-    path: Option<String>,
-    recursive: Option<bool>,
-    shallow: Option<bool>,
+    pub(crate) name: String,
+    pub(crate) url: Url,
+    pub(crate) branch: Option<String>,
+    pub(crate) tag: Option<String>,
+    pub(crate) path: Option<PathBuf>,
+    #[serde(default = "default_bool")]
+    pub(crate) recursive: bool,
+    #[serde(default = "default_bool")]
+    pub(crate) shallow: bool,
+}
+
+fn default_bool() -> bool {
+    true
 }
 
 /// Module's error type.
